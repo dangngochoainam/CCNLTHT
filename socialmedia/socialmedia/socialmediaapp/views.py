@@ -17,9 +17,24 @@ from django.conf import settings
 
 class PostsViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
 
-    queryset = Posts.objects.filter(active=True)
-    serializer_class = PostsSerializer
+    lookup_field = ['title']
+    queryset = Posts.objects.all()
+    serializer_class = PostsDetailSerializer
     pagination_class = BasePagination
+
+
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = PostsSerializer(page, many=True)
+
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def get_queryset(self):
 
@@ -109,11 +124,42 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
                 a = AuctionsDetails.objects.create(user=request.user, posts=posts,
                                                           price=price, content=content)
                 posts.auction_users.add(request.user)
-
                 posts.save()
 
                 return Response(self.serializer_class(posts).data,
                                 status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['get'], detail=True, url_path='get-buyer')
+    def get_buyer(self, request, pk):
+        posts = self.get_object()
+        buyers = AuctionsDetails.objects.filter(posts=posts)
+        return Response(AuctionUsersSerializer(buyers, many=True).data, status=status.HTTP_200_OK)
+
+    @action(methods=['post'], detail=True, url_path='buy')
+    def buy(self, request, pk):
+        if(request.user == self.get_object().user):
+            try:
+                posts = self.get_object()
+            except:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            else:
+                posts.active = False
+
+                auctions_id = request.data.get('auctions_id')
+                winer = request.data.get('email_winer')
+                loser = request.data.get('email_loser')
+                price = request.data.get('price')
+
+                auction = AuctionsDetails.objects.get(pk=auctions_id)
+                auction.active = True
+
+                auction.save()
+                posts.save()
+
+                data = {"email_winer": winer, "email_loser": loser, "price": price}
+                return Response(data=data, status=status.HTTP_200_OK)
+
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=['get'], url_path='comments', detail=True)
@@ -195,7 +241,7 @@ class HagtagViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = HagtagSerializer
 
 
-class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
+class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView, generics.RetrieveAPIView):
 
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
@@ -219,11 +265,35 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         return Response(PostsSerializer(posts, many=True).data,
                         status=status.HTTP_200_OK)
 
-    @action(methods=['get'], detail=False, url_path='current-user')
-    def get_current_user(self, request):
-        return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
+    # @action(methods=['get'], detail=False, url_path='current-user')
+    # def get_current_user(self, request):
+    #     return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        if (self.get_object() == request.user):
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+        else:
+            instance = self.get_object()
+            serializer = UserDetailsSerializer(instance)
+        return Response(serializer.data)
+
+
+    @action(methods=['post'], detail=True, url_path='report')
+    def report(self, request, pk):
+        creator = request.user
+        user = self.get_object()
+        content = request.data.get('content')
+        try:
+            Report.objects.create(creator=creator, user=user, content=content)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_200_OK)
+
 
 
 class AuthInfo(APIView):
     def get(self, request):
         return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
+
+

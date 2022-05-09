@@ -40,7 +40,6 @@ class WritableSerializerMethodField(SerializerMethodField):
         return {self.field_name: self.deserializer_field.to_internal_value(method(value))}
 
 
-
 class UserSerializer(ModelSerializer):
 
     avatar = WritableSerializerMethodField(source='avatar', deserializer_field=serializers.ImageField(use_url='users/%Y/%m'))
@@ -72,6 +71,7 @@ class UserSerializer(ModelSerializer):
             }
         }
 
+
     def create(self, validated_data):
         data = validated_data.copy()
         user = User(**data)
@@ -79,6 +79,11 @@ class UserSerializer(ModelSerializer):
         user.save()
 
         return user
+
+class UserDetailsSerializer(UserSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'avatar']
 
 
 class PostsSerializer(ModelSerializer):
@@ -107,7 +112,7 @@ class PostsSerializer(ModelSerializer):
 
     class Meta:
         model = Posts
-        fields = ['id', 'title', 'image', 'user', 'hagtags', 'content']
+        fields = ['id', 'title', 'image', 'user', 'hagtags']
         # fields = '__all__'
 
 
@@ -116,11 +121,15 @@ class PostsDetailSerializer(PostsSerializer):
 
     class Meta:
         model = PostsSerializer.Meta.model
-        fields = PostsSerializer.Meta.fields
+        fields = PostsSerializer.Meta.fields + ['content']
+
+class AuctionUsersSerializer(ModelSerializer):
+
+    class Meta:
+        model = AuctionsDetails
+        fields = ['id', 'user', 'content', 'price', 'created_date']
 
 class CreaterPostsDetailSerializer(PostsSerializer):
-
-    
 
     class Meta:
         model = PostsSerializer.Meta.model

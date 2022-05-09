@@ -29,9 +29,7 @@ class Posts(ModelBase):
     content = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
     auction_users = models.ManyToManyField(User, through='AuctionsDetails')
-    hagtags = models.ManyToManyField('Hastag', blank=True, related_name='articles', null=True)
-
-
+    hagtags = models.ManyToManyField('Hastag', blank=True, related_name='articles')
 
     class Meta:
         ordering = ['-id']
@@ -47,6 +45,7 @@ class Hastag(ModelBase):
         return self.name
 
 class AuctionsDetails(ModelBase):
+    active = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     posts = models.ForeignKey(Posts, on_delete=models.CASCADE, null=True)
     price = models.FloatField()
@@ -99,6 +98,11 @@ class PostView(models.Model):
     counter = models.IntegerField(default=0)
     posts = models.OneToOneField(Posts, on_delete=models.CASCADE, null=True)
 
+class Report(ModelBase):
+    active = models.BooleanField(default=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='creator_report')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='reported')
+    content = models.TextField()
 
 
 
