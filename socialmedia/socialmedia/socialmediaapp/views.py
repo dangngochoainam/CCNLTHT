@@ -42,6 +42,15 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
     queryset = Posts.objects.filter(active=True)
     serializer_class = PostsDetailSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        if(self.get_object().user == request.user):
+            instance = self.get_object()
+            serializer = CreaterPostsDetailSerializer(instance)
+        else:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         if request.user == self.get_object().user:
             return super().destroy(request, *args, **kwargs)
@@ -86,6 +95,27 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
                                 status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+
+    @action(methods=['post'], detail=True, url_path='auctions')
+    def add_auctions(self, request, pk):
+        try:
+            posts = self.get_object()
+        except Http404:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            price = request.data.get('price')
+            content = request.data.get('content')
+            if price is not None:
+                a = AuctionsDetails.objects.create(user=request.user, posts=posts,
+                                                          price=price, content=content)
+                posts.auction_users.add(request.user)
+
+                posts.save()
+
+                return Response(self.serializer_class(posts).data,
+                                status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
     @action(methods=['get'], url_path='comments', detail=True)
     def get_comments(self, request, pk):
         posts = self.get_object()
@@ -99,7 +129,8 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
     def add_comment(self, request, pk):
         content = request.data.get('content')
         if content:
-            comment = Comment.objects.create(content=content, posts=self.get_object(), user=request.user)
+            notif = Notification.objects.create(content='Comment', user=request.user, posts=self.get_object())
+            comment = Comment.objects.create(content=content, posts=self.get_object(), user=request.user, notification=notif)
 
             return Response(CreateCommentSerializer(comment).data,
                         status=status.HTTP_201_CREATED)
@@ -115,14 +146,17 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
         l, _ = Like.objects.get_or_create(posts=posts, user=user)
         l.active = not l.active
 
+        if l.active == True:
+            notif, _ = Notification.objects.get_or_create(content='Like', user=request.user, posts=self.get_object())
+            l.notification = notif
+
         try:
             l.save()
-            # notif = Notification.objects.create(content='Like', user=request.user, posts=self.get_object())
+
         except:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(data=AuthPostsDetailSerializer(posts, context={'request': request}).data, status=status.HTTP_200_OK)
-
 
     @action(methods=['get'], detail=True, url_path='views')
     def count_view(self, request, pk):

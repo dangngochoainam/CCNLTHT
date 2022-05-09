@@ -31,7 +31,6 @@ class Posts(ModelBase):
     auction_users = models.ManyToManyField(User, through='AuctionsDetails')
     hagtags = models.ManyToManyField('Hastag', blank=True, related_name='articles', null=True)
 
-    # hagtag = models.ForeignKey(Hastag, on_delete=models.CASCADE, blank=True, null=True, related_name='posts')
 
 
     class Meta:
@@ -58,6 +57,7 @@ class AuctionsDetails(ModelBase):
 
 class Notification(models.Model):
     content = models.CharField(max_length=255)
+    active = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', null=True)
     posts = models.ForeignKey(Posts, on_delete=models.CASCADE, related_name='notifications', null=True)
 
@@ -87,7 +87,7 @@ class ActionBase(models.Model):
 
 class Like(ActionBase):
     active = models.BooleanField(default=False)
-    notification = models.OneToOneField(Notification, null=True, on_delete=models.PROTECT, related_name='like')
+    notification = models.OneToOneField(Notification, null=True, on_delete=models.CASCADE, related_name='like')
 
     def __str__(self):
         return str(self.posts) +" - " + str(self.user)

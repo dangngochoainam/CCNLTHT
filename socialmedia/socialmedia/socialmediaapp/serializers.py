@@ -116,12 +116,21 @@ class PostsDetailSerializer(PostsSerializer):
 
     class Meta:
         model = PostsSerializer.Meta.model
+        fields = PostsSerializer.Meta.fields
+
+class CreaterPostsDetailSerializer(PostsSerializer):
+
+    
+
+    class Meta:
+        model = PostsSerializer.Meta.model
         fields = PostsSerializer.Meta.fields + ['auction_users']
 
 
 
 class AuthPostsDetailSerializer(PostsDetailSerializer):
     like = SerializerMethodField()
+
 
     def get_like(self, posts):
         request = self.context.get('request')
@@ -151,4 +160,6 @@ class CreateCommentSerializer(ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['content', 'user', 'posts', 'updated_date', 'created_date']
+        fields = ['content', 'user', 'posts', 'updated_date', 'created_date', 'notification']
+
+
