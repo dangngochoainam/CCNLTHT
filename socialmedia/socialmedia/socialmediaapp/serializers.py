@@ -112,7 +112,7 @@ class PostsSerializer(ModelSerializer):
 
     class Meta:
         model = Posts
-        fields = ['id', 'title', 'image', 'user', 'hagtags']
+        fields = ['id', 'title', 'image', 'user', 'hagtags', 'created_date']
         # fields = '__all__'
 
 

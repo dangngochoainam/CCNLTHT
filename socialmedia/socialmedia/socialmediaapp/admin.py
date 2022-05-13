@@ -7,16 +7,8 @@ from django.utils.html import mark_safe
 from django.urls import path
 
 
-class PostsAdmin(admin.ModelAdmin):
-    search_fields = ['title']
-    readonly_fields = ['image_view']
-
-    def image_view(self, course):
-        if course:
-            return mark_safe(
-                '<img src="/static/{url}" width="120" />' \
-                    .format(url=course.image.name)
-            )
+class SocialMediaAppAdminSite(admin.AdminSite):
+    site_header = "Mạng xã hội từ thiện"
 
     def get_urls(self):
         return [
@@ -28,21 +20,33 @@ class PostsAdmin(admin.ModelAdmin):
         # stats = Posts.objects.annotate(lesson_count=Count('my_lesson')).values('id', 'subject', 'lesson_count')
 
         return TemplateResponse(request, 'admin/posts-stats.html')
-                                # 'templates/admin/posts-stats.html', {
-                                #     'count': c,
-                                #     'stats': stats
-                                # })
-
-
-admin.site.register(Posts, PostsAdmin)
-admin.site.register(AuctionsDetails)
-admin.site.register(User)
-admin.site.register(Hastag)
-admin.site.register(UserRole)
-admin.site.register(Comment)
-admin.site.register(Like)
-admin.site.register(Notification)
+        # 'templates/admin/posts-stats.html', {
+        #     'count': c,
+        #     'stats': stats
+    #     # })
 
 
 
-# Register your models here.
+class PostsAdmin(admin.ModelAdmin):
+    search_fields = ['title']
+    readonly_fields = ['image_view']
+
+    def image_view(self, course):
+        if course:
+            return mark_safe(
+                '<img src="/static/{url}" width="120" />' \
+                    .format(url=course.image.name)
+            )
+
+
+admin_site = SocialMediaAppAdminSite(name="SocialMediaApp")
+
+admin_site.register(Posts, PostsAdmin)
+admin_site.register(AuctionsDetails)
+admin_site.register(User)
+admin_site.register(Hastag)
+admin_site.register(UserRole)
+admin_site.register(Comment)
+admin_site.register(Like)
+admin_site.register(Notification)
+

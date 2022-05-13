@@ -265,9 +265,9 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         return Response(PostsSerializer(posts, many=True).data,
                         status=status.HTTP_200_OK)
 
-    # @action(methods=['get'], detail=False, url_path='current-user')
-    # def get_current_user(self, request):
-    #     return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
+    @action(methods=['get'], detail=False, url_path='current-user')
+    def get_current_user(self, request):
+        return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         if (self.get_object() == request.user):
@@ -295,5 +295,6 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 class AuthInfo(APIView):
     def get(self, request):
         return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
+
 
 
