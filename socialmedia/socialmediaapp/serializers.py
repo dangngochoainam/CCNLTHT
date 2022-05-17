@@ -205,3 +205,8 @@ class NotificationSerializer(ModelSerializer):
         model = Notification
         fields = ['created_date', 'active', 'content', 'user', 'posts', 'creator']
 
+class ReportSerializer(ModelSerializer):
+
+    class Meta:
+        model = Report
+        fields = '__all__'

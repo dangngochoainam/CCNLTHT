@@ -327,7 +327,7 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.action in ['get_current_user', 'get_notifications']:
+        if self.action in ['get_current_user', 'get_notifications', 'report']:
             return [permissions.IsAuthenticated()]
 
         return [permissions.AllowAny()]
@@ -375,12 +375,13 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
     def report(self, request, pk):
         creator = request.user
         user = self.get_object()
+
         content = request.data.get('content')
         try:
-            Report.objects.create(creator=creator, user=user, content=content)
+            r = Report.objects.create(creator=creator, user=user, content=content)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_200_OK)
+        return Response(ReportSerializer(r).data, status=status.HTTP_200_OK)
 
 
 

@@ -22,6 +22,9 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='users/%Y/%m')
     user_role = models.ForeignKey(UserRole, null=True, on_delete=models.SET_NULL, related_name='users')
 
+    def __str__(self):
+        return self.username
+
 
 class Posts(ModelBase):
     title = models.CharField(max_length=200)
