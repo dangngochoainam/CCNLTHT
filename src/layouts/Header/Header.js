@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import Apis, { endpoints } from "../../configs/Apis";
 import { Link, useNavigate } from "react-router-dom";
-import { UserContext } from "../../App";
+import { NotifContext, UserContext } from "../../App";
 import cookies from "react-cookies";
 import PostsModal from "../../components/PostsModal/PostsModal";
 import Notification from "../../components/Notification/Notification";
@@ -20,6 +20,7 @@ const Header = () => {
   const [kw, setKw] = useState("");
   const nav = useNavigate();
   const [user, dispatch] = useContext(UserContext);
+  const [notif, dispatchNotif] = useContext(NotifContext)
 
   useEffect(() => {
     const loadHagtags = async () => {
@@ -27,8 +28,9 @@ const Header = () => {
       setHagtags(res.data);
     };
     loadHagtags();
-  }, []);
 
+  }, []);
+  
   const search = (e) => {
     e.preventDefault();
     nav(`?kw=${kw}`);
@@ -39,10 +41,13 @@ const Header = () => {
 
     cookies.remove("access_token");
     cookies.remove("user");
+    cookies.remove("notification")
 
     dispatch({
       type: "logout",
     });
+
+    dispatchNotif({type: "out"})
 
     nav("/login");
   };
@@ -68,14 +73,16 @@ const Header = () => {
         />{" "}
         <Link to={`/users/${user.id}/`} className="text-info nav-link">
           {user.first_name} {user.last_name}
-        </Link>
-        <Notification/>
+        </Link>        
+        {notif && <Notification data={notif} length={notif.length}/>}
         <a href="#" onClick={logout} className="nav-link text-danger">
           Đăng xuất
         </a>
       </>
     );
   }
+
+  
 
   return (
     <>
@@ -90,20 +97,11 @@ const Header = () => {
               <Link className="nav-link" to="/">
                 Trang chủ
               </Link>
-
               {user && (
                 <Link className="nav-link" to="posts/add-posts">
                   Tạo bài viết mới
                 </Link>
               )}
-
-              {/* {hagtags.map((h, idx) => {
-                
-                let path = `?hagtag=${h.id}`
-
-                return <Link className="nav-link" to={path} key={h.id}>{h.name}</Link>
-
-                })} */}
             </Nav>
             <Form className="d-flex me-3" onSubmit={search}>
               <FormControl
@@ -114,14 +112,12 @@ const Header = () => {
                 className="mr-2"
                 aria-label="Search"
               />
-
               <Button variant="outline-success" type="submit">
                 Search
               </Button>
             </Form>
             <Nav className="d-flex justify-content-center align-items-center">
               {path}
-              
             </Nav>
           </Navbar.Collapse>
         </Container>

@@ -5,7 +5,7 @@ import Item from "../Item/Item";
 import cookies from "react-cookies";
 import { Button, Col, Form, Image, Row } from "react-bootstrap";
 import Moment from "react-moment";
-import { UserContext } from "../../App";
+import { NotifContext, UserContext } from "../../App";
 
 const PostsDetail = () => {
   const { postsId } = useParams();
@@ -14,6 +14,8 @@ const PostsDetail = () => {
   const [commentContent, setCommentContent] = useState();
   const [changed, setChanged] = useState(0)
   const [user, dispatch] = useContext(UserContext);
+  const [notif, dispatchNotif] = useContext(NotifContext);
+
 
   useEffect(() => {
     const getPosts = async () => {
@@ -44,6 +46,20 @@ const PostsDetail = () => {
     setChanged(comments.length)
     setCommentContent('')
 
+    console.log(res.data)
+
+    let resNotif = await authAxios().get(`${endpoints['notifications']}${res.data.notification}/`)
+
+      console.log(resNotif.data)
+
+      cookies.save("notifications", [...notif, resNotif.data])
+
+      dispatchNotif({
+        type: "comment",
+        payload: [resNotif.data],
+      });
+    
+
 
   }
 
@@ -53,7 +69,14 @@ const PostsDetail = () => {
     </Link></em>
   );
 
-  if (user)
+
+let check = false
+  if (user){
+
+    if(posts){
+
+      check = user.id === posts.user
+    }
     btn = (
       <>
         <Form onSubmit={addComment} className="ps-5 pe-5">
@@ -69,9 +92,7 @@ const PostsDetail = () => {
           <Button type='submit' className="primary">Thêm bình luận</Button>
         </Form>
       </>
-    );
-
-    
+    );} 
 
   return (
     <>
@@ -86,7 +107,7 @@ const PostsDetail = () => {
           title={posts.title}
           created_date={posts.created_date}
           content={posts.content}
-          check={posts.user === cookies.load("user").id}
+          check={check}
         />
       )}
       <hr />

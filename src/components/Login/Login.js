@@ -1,60 +1,65 @@
 import { useContext, useState } from "react";
 import { Button, Container, Form } from "react-bootstrap";
 import { Navigate, useNavigate } from "react-router-dom";
-import { UserContext } from "../../App";
-import Apis, { endpoints } from "../../configs/Apis";
-import cookies from 'react-cookies'
-
+import { NotifContext, UserContext } from "../../App";
+import Apis, { authAxios, endpoints } from "../../configs/Apis";
+import cookies from "react-cookies";
 
 const Login = () => {
   const [username, setUsername] = useState();
   const [password, setPassword] = useState();
-  const [user, dispatch] = useContext(UserContext)
-  const nav = useNavigate()
-
+  const [user, dispatch] = useContext(UserContext);
+  const [notif, dispatchNotif] = useContext(NotifContext);
+  const nav = useNavigate();
 
   const login = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    try{
+    try {
+      let info = await Apis.get(endpoints["oauth2-info"]);
+      let res = await Apis.post(endpoints["login"], {
+        client_id: info.data.client_id,
+        client_secret: info.data.client_secret,
+        username: username,
+        password: password,
+        grant_type: "password",
+      });
 
-        let info = await Apis.get(endpoints["oauth2-info"])
-        let res = await Apis.post(endpoints["login"], {
-            "client_id": info.data.client_id,
-            "client_secret": info.data.client_secret,
-            "username": username,
-            "password": password,
-            "grant_type": "password"
-        })
+      console.info(res.data);
+      cookies.save("access_token", res.data.access_token);
 
-        console.info(res.data)
-        cookies.save("access_token", res.data.access_token)
+      let user = await Apis.get(endpoints["current-user"], {
+        headers: {
+          Authorization: `Bearer ${cookies.load("access_token")}`,
+        },
+      });
+      console.log(user.data);
 
-        let user = await Apis.get(endpoints["current-user"], {
-            headers: {
-                "Authorization": `Bearer ${cookies.load("access_token")}`
-            }
-        })
+      let resNotif = await authAxios().get(
+        `${endpoints["users"]}${user.data.id}/get-notifications/`
+      );
 
-        cookies.save("user", user.data)
+      cookies.save("notifications", resNotif.data);
 
-        dispatch({
-            "type": 'login',
-            "payload": user.data
-        })
-        
-        
+      cookies.save("user", user.data);
+
+      dispatch({
+        type: "login",
+        payload: user.data,
+      });
+
+      dispatchNotif({
+        type: "load",
+        payload: resNotif.data,
+      });
+    } catch (err) {
+      console.log(err);
     }
-    catch (err){
-        console.log(err)
-    }
+  };
 
+  if (user != null) {
+    return <Navigate to="/" />;
   }
-
-
-    if(user != null){
-        return <Navigate to='/'/>
-    }
 
   return (
     <>

@@ -8,6 +8,8 @@ export let endpoints = {
     "oauth2-info": "/oauth2-info",
     "login": "/o/token/",
     "current-user": "/users/current-user/",
+    "notifications": "/notifications/",
+
 
 }
 
