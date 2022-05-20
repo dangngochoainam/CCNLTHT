@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Alert, Button, Card, Col, Image, Row } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
-import { NotifContext } from "../../App";
+import { NotifContext, UserContext } from "../../App";
 import Apis, { authAxios, endpoints } from "../../configs/Apis";
 import cookies from "react-cookies";
 
@@ -61,6 +61,7 @@ const Item = (props) => {
       </Col>
     </>
   );
+
 
   if (props.detail) {
     btnDetail = null;

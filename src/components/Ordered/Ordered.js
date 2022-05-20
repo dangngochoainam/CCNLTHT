@@ -43,6 +43,7 @@ const Ordered = () => {
       }
     );
     console.log(res.data);
+
   };
 
   const buy = async (id) => {

@@ -18,7 +18,7 @@ const UserDetail = (props) => {
           {props.first_name} {props.last_name}
         </span>
         <p>Thông tin liên hệ: {props.email}</p>
-        {props.id !== user.id && <Report id={props.id}/> }
+        {props && user && props.id !== user.id ? <Report id={props.id}/> : null}
         
       </div>
     </>

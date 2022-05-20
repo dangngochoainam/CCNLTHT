@@ -40,7 +40,6 @@ const Login = () => {
       );
 
       cookies.save("notifications", resNotif.data);
-
       cookies.save("user", user.data);
 
       dispatch({
