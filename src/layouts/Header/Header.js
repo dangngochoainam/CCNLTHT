@@ -82,6 +82,14 @@ const Header = () => {
     );
   }
 
+  let btnAdmin = null
+
+  if(user && user.is_superuser){
+    btnAdmin = <Link className="nav-link" to="/">
+    Xem thống kê
+  </Link>
+  }
+
   
 
   return (
@@ -102,6 +110,7 @@ const Header = () => {
                   Tạo bài viết mới
                 </Link>
               )}
+              {btnAdmin}
             </Nav>
             <Form className="d-flex me-3" onSubmit={search}>
               <FormControl

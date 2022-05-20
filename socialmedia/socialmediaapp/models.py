@@ -107,6 +107,7 @@ class PostView(models.Model):
     counter = models.IntegerField(default=0)
     posts = models.OneToOneField(Posts, on_delete=models.CASCADE, null=True)
 
+
 class Report(ModelBase):
     active = models.BooleanField(default=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='creator_report')

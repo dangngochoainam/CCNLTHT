@@ -17,6 +17,7 @@ import PostsModal from "./components/PostsModal/PostsModal";
 import { authAxios, endpoints } from "./configs/Apis";
 import notificationReducer from "./reducers/NotificationReducer";
 import Ordered from "./components/Ordered/Ordered";
+import Status from "./components/Status/Status";
 
 export const UserContext = createContext();
 export const NotifContext = createContext();
@@ -40,6 +41,7 @@ function App() {
               <Route path="/posts/:postsId" element={<PostsDetail />} />
               <Route path="/posts/add-posts" element={<PostsModal />} />
               <Route path="/posts/:postsId/ordered" element={<Ordered/>}/>
+              <Route path="/admin" element={<Status/>}/>
               <Route
                 path="/posts/:postsId/update-posts"
                 element={<PostsModal />}

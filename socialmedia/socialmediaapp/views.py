@@ -359,7 +359,10 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
 
     @action(methods=['get'], detail=False, url_path='current-user')
     def get_current_user(self, request):
-        return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
+        # return Response(self.serializer_class(request.user).data, status=status.HTTP_200_OK)
+        return Response(UserDetails2Serializer(request.user).data, status=status.HTTP_200_OK)
+
+
 
     def retrieve(self, request, *args, **kwargs):
         if (self.get_object() == request.user):

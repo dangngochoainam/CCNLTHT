@@ -4,6 +4,7 @@ import Moment from "react-moment";
 import { Link, useParams } from "react-router-dom";
 import { UserContext } from "../../App";
 import Apis, { authAxios, endpoints } from "../../configs/Apis";
+import emailjs from "@emailjs/browser";
 
 const Ordered = () => {
   const { postsId } = useParams();
@@ -31,7 +32,6 @@ const Ordered = () => {
     loadBuyer();
 
     console.log("useEffect");
-
   }, [changed]);
 
   const order = async () => {
@@ -43,35 +43,54 @@ const Ordered = () => {
       }
     );
     console.log(res.data);
-
+    setContent('')
+    setPrice(0)
   };
 
+  const sendEmail = (message, toEmail) => {
+    emailjs.send(
+      "service_ezcg598",
+      "template_60h0lvq",
+      {
+        name: 'bạn',
+        from_name: user.email,
+        message: message,
+        subject: "THÔNG TIN VỀ ĐẤU GIÁ",
+        to_email: toEmail,
+      },
+      "IwjaAhtk24FOVrWy7"
+    );
+  }
+
+ 
+
   const buy = async (id) => {
-    const loserEmail = buyer.reduce((acc, item) => {
+    const emailLoser = buyer.reduce((acc, item) => {
       if (item.id !== id) {
+        
         return [...acc, item.user.email];
       } else return [...acc];
     }, []);
 
-    const winerEmail = buyer.filter((b) => b.id === id)[0].user.email;
+    const emailWiner = buyer.filter((b) => b.id === id)[0].user.email;
     const price = buyer.filter((b) => b.id === id)[0].price;
-
-    console.log(id);
-    console.log(price);
-    console.log(loserEmail);
-    console.log(winerEmail);
 
     let res = await authAxios().post(`${endpoints["posts"]}${postsId}/buy/`, {
       auctions_id: id,
-      email_winer: winerEmail,
-      email_loser: loserEmail,
+      email_winer: emailWiner,
+      email_loser: emailLoser,
       price: price,
     });
 
     console.log(res.data);
 
-    setChanged(!changed);
+    sendEmail(`Bạn đã thắng đấu giá với "${posts.title}" với giá ${res.data.price}.
+    Vui lòng liên hệ email: ${user.email} để tiến hành các thủ tục còn lại.`,
+    res.data.email_winer)
 
+    sendEmail(`Bạn đã thua đấu giá với "${posts.title}".`, res.data.email_loser)
+
+    setChanged(!changed);
   };
 
   let buyers = null;
@@ -115,7 +134,7 @@ const Ordered = () => {
               className="d-flex justify-content-center flex-column"
             >
               <Button onClick={() => buy(b.id)} className="primary">
-                {b.active ? "Đã mua": "Bán"}
+                {b.active ? "Đã mua" : "Bán"}
               </Button>
             </Col>
           </Row>
@@ -155,16 +174,15 @@ const Ordered = () => {
     </>
   );
 
-  if(posts){
-    if(posts.active === false){
-      form = <h1>Sản phẩm đã được đấu giá thành công</h1>
+  if (posts) {
+    if (posts.active === false) {
+      form = <h1>Sản phẩm đã được đấu giá thành công</h1>;
     }
   }
 
   return (
     <>
       <Container className="mt-3 mb-3">
-        {/* {posts.active && <h1>sp vẫn còn</h1>} */}
         {form}
         <hr />
         {buyers}

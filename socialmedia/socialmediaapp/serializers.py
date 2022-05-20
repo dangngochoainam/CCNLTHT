@@ -86,6 +86,14 @@ class UserDetailsSerializer(UserSerializer):
         fields = ['id', 'first_name', 'last_name', 'email', 'avatar']
 
 
+class UserDetails2Serializer(UserDetailsSerializer):
+
+    class Meta:
+        model = User
+        fields = UserDetailsSerializer.Meta.fields + ['is_superuser']
+        read_only_fields = ['is_superuser']
+
+
 class PostsSerializer(ModelSerializer):
 
     image = WritableSerializerMethodField(source='image',
