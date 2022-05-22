@@ -13,10 +13,12 @@ router.register('comments', views.CommentViewSet)
 router.register(prefix='hagtags', viewset=views.HagtagViewSet)
 router.register(prefix='users', viewset=views.UserViewSet)
 router.register('notifications', views.NotificationViewSet)
+router.register('admin', views.AdminView)
+
 
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('admin/', admin_site.urls),
+    # path('admin/', admin_site.urls),
     path('oauth2-info', views.AuthInfo.as_view())
 ]

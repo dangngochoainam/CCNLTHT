@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from .models import *
 from .serializers import *
 from .paginator import BasePagination
-from django.db.models import F
+from django.db.models import F, Count, Q
 from django.conf import settings
 
 # def index(request):
@@ -22,6 +22,14 @@ class PostsViewSet(viewsets.ViewSet, generics.ListAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsDetailSerializer
     pagination_class = BasePagination
+
+    # 20/5
+    def get_permissions(self):
+        if self.action in ['add_post']:
+            return [permissions.IsAuthenticated()]
+
+        return [permissions.AllowAny()]
+    # 20/5
 
 
     @action(methods=['post'], url_path='add-posts', detail=False)
@@ -81,6 +89,12 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
     queryset = Posts.objects.all()
     serializer_class = PostsDetailSerializer
 
+    def get_permissions(self):
+        if self.action in ['add_comment', 'like', 'add_auctions', 'get_buyer', 'add_hagtag']:
+            return [permissions.IsAuthenticated()]
+
+        return [permissions.AllowAny()]
+
     def retrieve(self, request, *args, **kwargs):
         if(self.get_object().user == request.user):
             instance = self.get_object()
@@ -131,11 +145,6 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
 
         return Response(status=status.HTTP_403_FORBIDDEN)
 
-    # def update(self, request, *args, **kwargs):
-    #     if request.user == self.get_object().user:
-    #         return super().update(request, *args, **kwargs)
-    #
-    #     return Response(status=status.HTTP_403_FORBIDDEN)
 
     def partial_update(self, request, *args, **kwargs):
         if request.user == self.get_object().user:
@@ -143,12 +152,6 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
 
         return Response(status=status.HTTP_403_FORBIDDEN)
 
-
-    def get_permissions(self):
-        if self.action in ['add_comment', 'like', 'add_auctions', 'get_buyer']:
-            return [permissions.IsAuthenticated()]
-
-        return [permissions.AllowAny()]
 
     @action(methods=['post'], detail=True, url_path='hagtags')
     def add_hagtag(self, request, pk):
@@ -294,6 +297,22 @@ class PostsDetailViewSet(viewsets.ViewSet, generics.RetrieveAPIView,
 
         return Response(PostViewerSerializer(v).data, status=status.HTTP_200_OK)
 
+    # @action(methods=['get'], detail=True, url_path='get_like_comment')
+    # def get_like_comment(self, request, pk):
+    #     obj = self.get_object()
+    #
+    #     count_like = Like.objects.filter(posts=obj).count()
+    #
+    #     count_comment = Comment.objects.filter(posts=obj).count()
+    #
+    #     # user = Like.objects.filter(posts=obj).values('user')
+    #     #
+    #     # u = User.objects.filter(id=user[0].get('user'))
+    #     # print(u)
+    #     # "user": UserDetailsSerializer(user, many=True).data,
+    #
+    #     return Response(data={"posts": PostsDetailSerializer(self.get_object()).data, "count_like": count_like, "count_comment": count_comment}, status=status.HTTP_200_OK)
+
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
 
@@ -387,9 +406,6 @@ class UserViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView
         return Response(ReportSerializer(r).data, status=status.HTTP_200_OK)
 
 
-
-
-
 class AuthInfo(APIView):
     def get(self, request):
         return Response(settings.OAUTH2_INFO, status=status.HTTP_200_OK)
@@ -405,6 +421,79 @@ class NotificationViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+
+
+class AdminView(viewsets.ViewSet):
+    queryset = Posts.objects.all()
+    serializer_class = PostsSerializer
+
+    @action(methods=['get'], detail=False, url_path='views')
+    def admin_view(self, request):
+        if(request.user.is_superuser):
+
+            count_posts = Posts.objects.all().count()
+
+            stats_posts = Posts.objects \
+                .annotate(like_count=Count('like', distinct=True))\
+                .annotate(comment_count=Count('comments', distinct=True))\
+                .values('id', 'title', 'like_count', 'comment_count', 'user')
+
+            data = {"count_posts": count_posts, "stats": stats_posts}
+
+            return Response(data=data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    @action(methods=['post'], detail=False, url_path='get-posts')
+    def get_posts(self, request):
+
+        if(request.user.is_superuser):
+
+
+            user_id = request.data.get('user_id')
+            hagtag = request.data.get('hagtag')
+            date = request.data.get('date')
+
+            posts = Posts.objects.all()
+
+            if user_id is not None:
+                posts = posts.filter(user_id=user_id)
+                stats_posts = Posts.objects.filter(user_id=user_id) \
+                    .annotate(like_count=Count('like', distinct=True)) \
+                    .annotate(comment_count=Count('comments', distinct=True)) \
+                    .values('id', 'title', 'like_count', 'comment_count', 'user')
+
+
+            if hagtag is not None:
+                posts = posts.filter(hagtags=hagtag)
+                stats_posts = Posts.objects.filter(hagtags=hagtag) \
+                    .annotate(like_count=Count('like', distinct=True)) \
+                    .annotate(comment_count=Count('comments', distinct=True)) \
+                    .values('id', 'title', 'like_count', 'comment_count', 'user')
+
+
+            if date is not None:
+                date = date.split('-')
+
+                posts = posts.filter(Q(created_date__year=date[0]), Q(created_date__month=date[1]),\
+                                     Q(created_date__day=date[2]))
+                posts = posts.filter(Q(created_date__year=date[0]), Q(created_date__month=date[1]))
+                stats_posts = Posts.objects.filter(Q(created_date__year=date[0]), Q(created_date__month=date[1]),\
+                                                    Q(created_date__day=date[2]))\
+                    .annotate(like_count=Count('like', distinct=True)) \
+                    .annotate(comment_count=Count('comments', distinct=True)) \
+                    .values('id', 'title', 'like_count', 'comment_count', 'user')
+
+
+
+            data = {"count_posts": posts.count(), "stats": stats_posts}
+
+            return Response(data=data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+
+
+
 
 
 

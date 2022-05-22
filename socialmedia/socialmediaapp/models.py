@@ -1,3 +1,5 @@
+from _ast import mod
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -106,6 +108,13 @@ class PostView(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     counter = models.IntegerField(default=0)
     posts = models.OneToOneField(Posts, on_delete=models.CASCADE, null=True)
+
+# class PostsAdminView(models.Model):
+#     created_date = models.DateTimeField(auto_now_add=True)
+#     updated_date = models.DateTimeField(auto_now=True)
+#     posts = models.OneToOneField(Posts, on_delete=models.CASCADE, null=True)
+#     count_like = models.IntegerField(default=0)
+#     count_comment = models.IntegerField(default=0)
 
 
 class Report(ModelBase):
